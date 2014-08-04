@@ -35,6 +35,7 @@ namespace GoogleScholarParser
             threadParse.Start();
 
             File.Delete("log.html");
+            File.Delete("log.txt");
         }
 
         private void Parse()
@@ -58,7 +59,7 @@ namespace GoogleScholarParser
                     string responseFromServer = reader.ReadToEnd();
                     File.WriteAllText("log.html", responseFromServer, Encoding.Default);
                     
-                    count = ParseHtmlDocument(responseFromServer);
+                    ParseHtmlDocument(responseFromServer);
                 }
                 catch (WebException ex)
                 {
@@ -76,25 +77,28 @@ namespace GoogleScholarParser
             while((count > 0 && checkBoxCount.Checked) || (count > 0 && index < numericUpDownCount.Value && !checkBoxCount.Checked));
         }
 
-        private int ParseHtmlDocument(string input)
+        private void ParseHtmlDocument(string input)
         {
             HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
             doc.LoadHtml(input);
             try
             {
-                HtmlNode bodyNodeCount = doc.DocumentNode.SelectSingleNode("//div[@id='gs_ab_md']");
-                string c = bodyNodeCount.InnerText;
-                string b = "";
-                int l = 0;
-                while (c[l] != '(')
+                if (count == 0)
                 {
-                    if (Char.IsDigit(c[l]))
+                    HtmlNode bodyNodeCount = doc.DocumentNode.SelectSingleNode("//div[@id='gs_ab_md']");
+                    string c = bodyNodeCount.InnerText;
+                    string b = "";
+                    int l = 0;
+                    while (c[l] != '(')
                     {
-                        b += c[l];
+                        if (Char.IsDigit(c[l]))
+                        {
+                            b += c[l];
+                        }
+                        l++;
                     }
-                    l++;
+                    count = int.Parse(b) / 10;
                 }
-                File.Delete("log.txt");
                 HtmlNodeCollection bodyNodeNames = doc.DocumentNode.SelectNodes("//h3[@class='gs_rt']");
                 HtmlNodeCollection bodyNodeAutors = doc.DocumentNode.SelectNodes("//div[@class='gs_a']");
                 string[] names = new string[bodyNodeNames.Count];
@@ -105,12 +109,10 @@ namespace GoogleScholarParser
                     autors[i] = bodyNodeAutors[i].InnerText;
                     File.AppendAllText("log.txt", names[i] + "\n" + autors[i] + "\n\n");
                 }
-                return int.Parse(b) / 10;
             }
             catch
             {
                 File.WriteAllText("log.html", input, Encoding.Default);
-                return 0;
             }
         }
 
@@ -149,7 +151,7 @@ namespace GoogleScholarParser
                 StreamReader reader = new StreamReader(dataStream, Encoding.Default);
                 string responseFromServer = reader.ReadToEnd();
                 File.WriteAllText("log.html", responseFromServer, Encoding.Default);
-                count = ParseHtmlDocument(responseFromServer);
+                ParseHtmlDocument(responseFromServer);
             }
             catch (WebException ex)
             {
